@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- อัปเดต title ตามที่ขอ -->
+    <title>แบบฝึกหัดคัมภีร์สมุฎฐานวินิจฉัย</title>
+    
+    <!-- เพิ่ม Google Fonts 'Sarabun' -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            /* เปลี่ยน font-family เป็น 'Sarabun' */
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #quiz-container {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            box-sizing: border-box;
+            /* เพิ่ม transition เพื่อความนุ่มนวลตอนสลับหน้า */
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #summary-container {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            box-sizing: border-box;
+            text-align: center;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        #question-count {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #555;
+            flex-shrink: 0; /* ป้องกันไม่ให้ตัวนับข้อหดตัว */
+        }
+        
+        #question-header h2 {
+            font-size: 1.4em;
+            margin: 0;
+            padding-right: 15px; /* เพิ่มระยะห่าง */
+        }
+
+        #question {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            color: #222;
+        }
+
+        #answer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-size: 1em;
+            line-height: 1.5;
+            background-color: #fdfdfd;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 14px 20px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            white-space: normal; /* ทำให้ข้อความยาวๆ ตัดขึ้นบรรทัดใหม่ได้ */
+            word-wrap: break-word; /* รองรับการตัดคำ */
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: #f0f0f0;
+            border-color: #aaa;
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+
+        .btn.correct {
+            background-color: #e0f8e0;
+            border-color: #6cdd6c;
+            color: #0a5c0a;
+            font-weight: bold;
+        }
+
+        .btn.incorrect {
+            background-color: #fde0e0;
+            border-color: #f77;
+            color: #a00;
+            font-weight: bold;
+        }
+
+        #feedback {
+            margin-top: 20px;
+            font-size: 1.4em;
+            font-weight: bold;
+            text-align: center;
+            height: 30px; /* จองพื้นที่ไว้กันหน้าจอกระโดด */
+        }
+
+        /* Animation */
+        .feedback-anim {
+            animation: feedback-pop 0.4s ease;
+        }
+
+        @keyframes feedback-pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #controls {
+            display: flex;
+            justify-content: space-between; /* แก้ไข: เพื่อให้ปุ่มอยู่คนละฝั่ง */
+            align-items: center; /* เพิ่ม: เพื่อให้ปุ่มอยู่กึ่งกลาง */
+            margin-top: 20px;
+        }
+
+        #next-btn, #restart-btn {
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: bold;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        /* เพิ่ม: สไตล์สำหรับปุ่มรอง (กลับหน้าหลัก) */
+        .btn-secondary {
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: bold;
+            background-color: #6c757d; /* สีเทา */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        #next-btn:hover, #restart-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* เพิ่ม: สไตล์โฮเวอร์สำหรับปุ่มรอง */
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        #summary-container h2 {
+            font-size: 2em;
+            color: #007bff;
+            margin-top: 0;
+        }
+
+        #summary-container p {
+            font-size: 1.3em;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        /* เพิ่ม: คอนเทนเนอร์สำหรับปุ่มหน้าสรุป */
+        #summary-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="quiz-container">
+        <div id="question-header">
+             <!-- อัปเดต h2 ตามที่ขอ -->
+            <h2>แบบฝึกหัดคัมภีร์สมุฎฐานวินิจฉัย</h2>
+            <!-- จำนวนข้อจะถูกอัปเดตโดย JS (ข้อ 1 / 20) -->
+            <div id="question-count">ข้อ 1 / 20</div>
+        </div>
+        
+        <div id="question">คำถามจะปรากฏที่นี่</div>
+        <div id="answer-buttons">
+            <!-- ตัวเลือกคำตอบจะถูกสร้างโดย JavaScript -->
+        </div>
+        
+        <div id="feedback"></div>
+        
+        <div id="controls">
+            <button id="home-btn" class="btn-secondary">กลับหน้าหลัก</button>
+            <button id="next-btn" class="hidden">ข้อต่อไป</button>
+        </div>
+    </div>
+
+    <div id="summary-container" class="hidden">
+        <h2>สรุปผลคะแนน</h2>
+        <p>🎉 ยอดเยี่ยมมากครับ! 🎉</p>
+        <p>คุณตอบถูก <span id="correct-score">0</span> ข้อ</p>
+        <p>คุณตอบผิด <span id="incorrect-score">0</span> ข้อ</p>
+        <p>คิดเป็น <span id="percentage-score">0</span>%</p>
+        <div id="summary-controls">
+            <button id="home-btn-summary" class="btn-secondary">กลับหน้าหลัก</button>
+            <button id="restart-btn">ทำแบบทดสอบใหม่</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. ฐานข้อมูลคำถาม (อัปเดตใหม่ทั้งหมด 20 ข้อ) ---
+        const questions = [
+            {
+                question: "1. จากคัมภีร์สมุฏฐานวินิจฉัย ข้อใดไม่อยู่ในกองพิกัดสมุฏฐาน",
+                options: [
+                    "ธาตุสมุฏฐาน",
+                    "อายุสมุฏฐาน",
+                    "กาลสมุฏฐาน",
+                    "อุตุสมุฏฐาน",
+                    "ฤดูสมุฏฐาน"
+                ],
+                correctAnswer: "อุตุสมุฏฐาน"
+            },
+            {
+                question: "2. ข้อใดเป็นสมุฎฐานธาตุเตโชพิกัด",
+                options: [
+                    "กำเดา",
+                    "โลหิต",
+                    "กะรีสะ",
+                    "อุระเสมหะ",
+                    "หทัยวาตะ"
+                ],
+                correctAnswer: "กำเดา"
+            },
+            {
+                question: "3. พัทธะปิตตะ คืออะไร",
+                options: [
+                    "เปลวแห่งความร้อน",
+                    "ดีในฝัก",
+                    "ดีนอกฝัก",
+                    "ลมเสียดแทง",
+                    "เสมหะที่ทวารหนัก"
+                ],
+                correctAnswer: "ดีในฝัก"
+            },
+            {
+                question: "4. จากคัมภีร์สมุฏฐานวินิจฉัย อายุ 30 ปี เป็นอายุแห่งสมุฎฐานอะไร",
+                options: [
+                    "เสมหะ",
+                    "วาตะ",
+                    "ปิตตะ",
+                    "สันนิบาต",
+                    "มหาสันนิบาต"
+                ],
+                correctAnswer: "ปิตตะ"
+            },
+            {
+                question: "5. ปฐมวัย มีเสมหะเป็นเจ้าเรือน ถ้าบังเกิดโรคจะมีกำลังโรคกี่องศา",
+                options: ["7", "10", "12", "29", "30"],
+                correctAnswer: "12"
+            },
+            {
+                question: "6. สมุฏฐานอาโปธาตุพิกัด เป็นที่ตั้งแห่งอะไร",
+                options: [
+                    "วีสติปถวี",
+                    "ทวาทศอาโป",
+                    "ฉกาลวาโย",
+                    "จตุกาลเตโช",
+                    "สันนิบาต"
+                ],
+                correctAnswer: "ทวาทศอาโป"
+            },
+            {
+                question: "7. จาก สมุฏฐานปถวีธาตุพิกัด ซึ่งจะวิปริต เป็นชาติ เคลื่อนจลนะ ภินนะ ก็อาศัยด้วยสิ่งใด",
+                options: [
+                    "หทัยวาตะ อุทริยะ กะรีสะ",
+                    "หทัยวาตะ อุทริยัง กะรีสะ",
+                    "หทัยวัตถุ อุทริยะ กะรีสะ",
+                    "หทัยวัตถุ อุทริยะ กรีสัง",
+                    "หทัยวัตถุ อุทริยัง กะรีสะ"
+                ],
+                correctAnswer: "หทัยวัตถุ อุทริยะ กะรีสะ"
+            },
+            {
+                question: "8. ในฤดู 6 วันแรม 1 ค่ำเดือน 12 ไปจนถึงขึ้น 15 ค่ำ เดือน 4 อยู่ในฤดูชื่อว่าอะไร",
+                options: [
+                    "วสันตฤดู",
+                    "วัสสานฤดู",
+                    "สาระทะฤดู",
+                    "เหมันตฤดู",
+                    "ศิศิรฤดู"
+                ],
+                correctAnswer: "ศิศิรฤดู"
+            },
+            {
+                question: "9. ในฤดู6 วันแรม 1 คำ เดือน 10 ไปจนถึงขึ้น 5 ค่ำ เดือน อยู่ในฤดูชื่อว่าอะไร",
+                options: [
+                    "วสันตฤดู",
+                    "วัสสานฤดู",
+                    "สาระทะฤดู",
+                    "เหมันตฤดู",
+                    "ศิศิรฤดู"
+                ],
+                correctAnswer: "สาระทะฤดู"
+            },
+            {
+                question: "10. คัมภีร์สมุฏฐานวินิจฉัย คนไข้อายุ 32 ปี จัดอยู่ในวัยใด มีอะไรเป็นเจ้าเรือน ถ้าบังเกิดโรคมีกำลังกี่ องศา ถ้าเป็นโรคสิ่งใดให้ตั้งอะไรเป็นต้น และอะไรเป็นที่สุด",
+                options: [
+                    "มัชฌิมวัย ปิตตะเป็นเจ้าเรือน มีกำลัง 7 องศา ให้ตั้งปิตตะเป็นต้น เสมหะเป็นที่สุด",
+                    "มัชฌิมวัย ปิตตะเป็นเจ้าเรือน มีกำลัง 7 องศา ให้ตั้งเสมหะเป็นต้น ปิตตะเป็นที่สุด",
+                    "มัชฌิมวัย วาตะะเป็นเจ้าเรือน มีกำลัง 10 องศา ให้ตั้งวาตะเป็นต้น ปิตตะเป็นที่สุด",
+                    "ปัจฉิมวัย วาตะเป็นเจ้าเรือน กำลัง 10 องศา ให้ตั้งวาตะเป็นต้น ปิตตะเป็นที่สุด",
+                    "ปัจฉิมวัย วาตะเป็นเจ้าเรือน กำลัง 10องศา ให้ตั้งปิตตะเป็นต้น วาตะเป็นที่สุด"
+                ],
+                correctAnswer: "ปัจฉิมวัย วาตะเป็นเจ้าเรือน กำลัง 10 องศา ให้ตั้งวาตะเป็นต้น ปิตตะเป็นที่สุด"
+            },
+            {
+                question: "11. จากคัมภีร์สมุฏฐานวินิจฉัย หัวข้อ กาลสมุฏฐาน กาล 3 กลางคืน ในเวลา 22.45 น. มีพิกัดใด กระทำ",
+                options: [
+                    "ปิตตะ",
+                    "วาตะ",
+                    "เสมหะ",
+                    "สันนิบาต",
+                    "ไม่มีพิกัดใดมากระทำ"
+                ],
+                correctAnswer: "ไม่มีพิกัดใดมากระทำ"
+            },
+            {
+                question: "12. กาลเอกโทษ เวลา 7.00-8.00 น. มีสมุฎฐานใดกระทำและอย่างละกี่ส่วน",
+                options: [
+                    "เสมหะ 2 ส่วน ปิตตะ 1 ส่วน",
+                    "เสมหะ 2 ส่วน วาตะ 1 ส่วน",
+                    "เสมหะกระทำเต็มที่ 3 ส่วน ไม่มีอะไรระคน",
+                    "ปิตตะกระทำเต็มที่ 3 ส่วน ไม่มีอะไรระคน",
+                    "วาตะกระทำเต็มที่ 3 ส่วน ไม่มีอะไรระคน"
+                ],
+                correctAnswer: "เสมหะกระทำเต็มที่ 3 ส่วน ไม่มีอะไรระคน"
+            },
+            {
+                question: "13. จากหัวข้อ เสมหะ ปิตตะ และวาตะ กำเริบ ในกาลเมื่ออาหารยังไม่ย่อยยับก็ดี ในกาลเมื่อเที่ยงคืน ก็ดี เป็นกระทรวงกาลสมุฏฐานใดกระทำ",
+                options: [
+                    "กระทรวงกาลสมุฏฐานเสมหะ",
+                    "กระทรวงกาลสมุฏฐานปิตตะ",
+                    "กระทรวงกาลสมุฏฐานวาตะ",
+                    "กระทรวงกาลสมุฏฐานปิตตะแทรกวาตะ",
+                    "กระทรวงกาลสมุฏฐานปิตตะแทรกเสมหะ"
+                ],
+                correctAnswer: "กระทรวงกาลสมุฏฐานปิตตะ"
+            },
+            {
+                question: "14. จากคัมภีร์สมุฏฐานวินิจฉัย ฤดูสมุฏฐาน มีฤดูอะไรบ้าง",
+                options: [
+                    "ฤดู 3, ฤดู 4,ฤดู 6",
+                    "ฤดู 3, ฤดู 6",
+                    "ฤดู 3, ฤดู 4",
+                    "ฤดู 4, ฤดู 6",
+                    "ฤดูพิสดาร 3, ฤดูพิสดาร 6"
+                ],
+                correctAnswer: "ฤดู 3, ฤดู 6"
+            },
+            {
+                question: "15. โทษของเสมหะ ปิตตะ หรือวาตะ อย่างใดอย่างหนึ่ง กระทำในเวลาของกาลนั้นๆจะมีอย่างอื่น ระคนก็เพียงเล็กน้อยและมีเวลาของกาลนั้นกระทำเต็มที่ในโอกาสหนึ่งจะได้ระคนอย่างอื่นหามิได้ ข้อความนี้กล่าวถึง กาลใด",
+                options: [
+                    "กาลตรีโทษ",
+                    "กาลทุวันโทษ",
+                    "กาลเอกโทษ",
+                    "กาลสันนิบาต",
+                    "กาลมหาสันนิบาต"
+                ],
+                correctAnswer: "กาลเอกโทษ"
+            },
+            {
+                question: "16. ธาตุทั้ง 4 กำเริบ หย่อน พิการ ตามสุริยะคติดำเนินในห้วงจักราศี โดยธาตุปถวีหย่อน สถิตในราศี ใด พิกัดใดระคนให้เป็นเหตุ",
+                options: [
+                    "ราศีกรกฎ พิกัดศอเสมหะ",
+                    "ราศีสิงห์ พิกัดอพัทธปิตตะ",
+                    "ราศีพฤษภ พิกัดหทัยวัตถุ",
+                    "ราศีกันย์ พิกัดอุทริยะ",
+                    "ราศีมังกร พิกัดกรีสะ"
+                ],
+                correctAnswer: "ราศีกันย์ พิกัดอุทริยะ"
+            },
+            {
+                question: "17. ธาตุทั้ง 4 กำเริบ หย่อน พิการ ตามสุริยะคติดำเนินในห้วงจักราศี โดยวาโยธาตุกำเริบ สถิตในราศี ใด พิกัดใดระคนให้เป็นเหตุ",
+                options: [
+                    "ราศีกรกฎ พิกัดศอเสมหะ",
+                    "ราศีกุมภ์ พิกัดสุมนาวาตะ",
+                    "ราศีเมถุน พิกัดหทัยวาตะ",
+                    "ราศีตุลย์ พิกัดสัตถกวาตะ",
+                    "ราศีตุล์ พิกัดสุมนาวาตะ"
+                ],
+                correctAnswer: "ราศีเมถุน พิกัดหทัยวาตะ"
+            },
+            {
+                question: "18. กาลทุวันโทษ เวลา 08.30 น. มีสมุฏฐานใดกระทำบ้างตามลำดับและอย่างละกี่ส่วน",
+                options: [
+                    "เสมหะ 1 ส่วน วาตะ 2 ส่วน",
+                    "เสมหะ 2 ส่วน วาตะ 1 ส่วน",
+                    "เสมหะ 2 ส่วน ปิตตะ 1 ส่วน",
+                    "เสมหะ 1 ส่วน ปิตตะ 1 ส่วน",
+                    "เสมหะ 1 ส่วน ปิตตะ 2 ส่วน"
+                ],
+                correctAnswer: "เสมหะ 2 ส่วน ปิตตะ 1 ส่วน"
+            },
+            {
+                question: "19. กาลตรีโทษ เวลา 11.30 น. มีสมุฏฐานใดกระทำบ้างตามลำดับและอย่างละกี่ส่วน",
+                options: [
+                    "ปิตตะ 1 ส่วน เสมหะ 4 ส่วน วาตะ 1 ส่วน",
+                    "ปิตตะ 2 ส่วน เสมหะ 3 ส่วน วาตะ 2 ส่วน",
+                    "ปิตตะ 2 ส่วน เสมหะ 2 ส่วน วาตะ 3 ส่วน",
+                    "ปิตตะ 1 ส่วน เสมหะ 1 ส่วน วาตะ 4 ส่วน",
+                    "ปิตตะ 1 ส่วน เสมหะ 4ส่วน วาตะ 2 ส่วน"
+                ],
+                correctAnswer: "ปิตตะ 2 ส่วน เสมหะ 3 ส่วน วาตะ 2 ส่วน"
+            },
+            {
+                question: "20. หัวข้อ สันนิบาต ปิตตะจะมีกำลังกี่องศา(กี่วัน)",
+                options: [
+                    "7 องศา (7วัน)",
+                    "10 องศา (10วัน)",
+                    "12 องศา (12วัน)",
+                    "29 องศา (29วัน)",
+                    "30 องศา (30วัน)"
+                ],
+                correctAnswer: "7 องศา (7วัน)"
+            }
+        ];
+
+        // --- 2. ตัวแปรสำหรับอ้างอิง DOM ---
+        const quizContainer = document.getElementById('quiz-container');
+        const summaryContainer = document.getElementById('summary-container');
+        const questionElement = document.getElementById('question');
+        const questionCountElement = document.getElementById('question-count');
+        const answerButtonsElement = document.getElementById('answer-buttons');
+        const feedbackElement = document.getElementById('feedback');
+        const nextBtn = document.getElementById('next-btn');
+        const homeBtn = document.getElementById('home-btn'); // เพิ่ม
+        const restartBtn = document.getElementById('restart-btn');
+        const homeBtnSummary = document.getElementById('home-btn-summary'); // เพิ่ม
+        const correctScoreElement = document.getElementById('correct-score');
+        const incorrectScoreElement = document.getElementById('incorrect-score');
+        const percentageScoreElement = document.getElementById('percentage-score');
+
+        // --- 3. ตัวแปรสถานะของแบบทดสอบ ---
+        let currentQuestionIndex = 0;
+        let correctScore = 0;
+        let incorrectScore = 0;
+        // อัปเดต: totalQuestions จะนับจาก .length ของ array ใหม่ (20 ข้อ)
+        const totalQuestions = questions.length;
+
+        // --- 4. ฟังก์ชันหลัก ---
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            correctScore = 0;
+            incorrectScore = 0;
+            summaryContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            nextBtn.classList.add('hidden');
+            feedbackElement.textContent = '';
+            
+            // ไม่มีการสุ่มคำถาม (ตามไฟล์เดิม)
+            
+            showQuestion();
+        }
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            
+            // แสดงคำถาม
+            questionElement.textContent = currentQuestion.question; 
+            // อัปเดต: แสดงตัวนับข้อที่ถูกต้อง (เช่น 1 / 20)
+            questionCountElement.textContent = `ข้อ ${currentQuestionIndex + 1} / ${totalQuestions}`;
+
+            const prefixes = ['ก.', 'ข.', 'ค.', 'ง.', 'จ.']; // เพิ่ม: ตัวเลือก ก-จ
+
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                // แก้ไข: เพิ่ม กขค... หน้าตัวเลือก
+                button.textContent = `${prefixes[index] || ''} ${option}`; 
+                button.dataset.option = option; // เก็บคำตอบจริงไว้ใน data attribute
+                button.classList.add('btn');
+                button.addEventListener('click', () => selectAnswer(button));
+                answerButtonsElement.appendChild(button);
+            });
+        }
+
+        function resetState() {
+            nextBtn.classList.add('hidden');
+            feedbackElement.textContent = '';
+            feedbackElement.className = '';
+            while (answerButtonsElement.firstChild) {
+                answerButtonsElement.removeChild(answerButtonsElement.firstChild);
+            }
+        }
+
+        function selectAnswer(selectedButton) {
+            const selectedOption = selectedButton.dataset.option;
+            const correct = selectedOption === questions[currentQuestionIndex].correctAnswer;
+
+            // แสดงแอนิเมชันและข้อความ
+            if (correct) {
+                correctScore++;
+                feedbackElement.textContent = '✅ ถูกต้องครับ!';
+                feedbackElement.className = 'feedback-anim';
+                feedbackElement.style.color = 'green';
+            } else {
+                incorrectScore++;
+                feedbackElement.textContent = '❌ ผิดครับ!';
+                feedbackElement.className = 'feedback-anim';
+                feedbackElement.style.color = 'red';
+            }
+
+            // ไฮไลต์คำตอบ
+            Array.from(answerButtonsElement.children).forEach(button => {
+                const buttonOption = button.dataset.option;
+
+                if (buttonOption === questions[currentQuestionIndex].correctAnswer) {
+                    button.classList.add('correct');
+                } else if (buttonOption === selectedOption) {
+                    button.classList.add('incorrect');
+                }
+                button.disabled = true; // ปิดการใช้งานปุ่มทั้งหมด
+            });
+
+            // แสดงปุ่ม "ข้อต่อไป"
+            nextBtn.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < totalQuestions) {
+                showQuestion();
+            } else {
+                showSummary();
+            }
+        }
+
+        function showSummary() {
+            quizContainer.classList.add('hidden');
+            summaryContainer.classList.remove('hidden');
+
+            const percentage = ((correctScore / totalQuestions) * 100).toFixed(0);
+
+            correctScoreElement.textContent = correctScore;
+            incorrectScoreElement.textContent = incorrectScore;
+            percentageScoreElement.textContent = percentage;
+        }
+
+        // เพิ่ม: ฟังก์ชันสำหรับปุ่มกลับหน้าหลัก (ยกเลิก)
+        function goHome() {
+            // โหลดหน้าเพจใหม่ = เริ่มทำแบบทดสอบใหม่ทั้งหมด
+            window.location.reload();
+        }
+
+        // --- 5. Event Listeners ---
+        nextBtn.addEventListener('click', nextQuestion);
+        restartBtn.addEventListener('click', startQuiz);
+        homeBtn.addEventListener('click', goHome);
+        homeBtnSummary.addEventListener('click', goHome);
+
+        // --- 6. เริ่มแบบทดสอบ ---
+        startQuiz();
+    </script>
+</body>
+</html>
